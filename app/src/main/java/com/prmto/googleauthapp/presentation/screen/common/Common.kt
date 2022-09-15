@@ -129,10 +129,10 @@ fun signUp(
                 )
 
             } catch (e: Exception) {
-                Log.d("SignIn", "Couldn't start One Tap UI :${e.message}")
+                Log.d("SignUp", "Couldn't start One Tap UI :${e.message}")
             }
         }.addOnFailureListener {
-            Log.d("SignIn", "Signing Up..")
+            Log.d("SignUp", "${it.message}")
             accountNotFound()
         }
 }
