@@ -5,9 +5,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.prmto.googleauthapp.domain.model.ApiResponse
-import com.prmto.googleauthapp.domain.model.MessageBarState
-import com.prmto.googleauthapp.domain.model.User
+import com.prmto.googleauthapp.domain.model.*
 import com.prmto.googleauthapp.domain.repository.Repository
 import com.prmto.googleauthapp.util.Constants.MAX_LENGTH
 import com.prmto.googleauthapp.util.RequestState
@@ -67,6 +65,60 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun updateUserInfo() {
+        _apiResponse.value = RequestState.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (user.value != null) {
+                    val response = repository.getUserInfo()
+                    verifyAndUpdate(currentUser = response)
+                }
+            } catch (e: Exception) {
+                _apiResponse.value = RequestState.Error(e)
+                _messageBarState.value = MessageBarState(error = e)
+            }
+        }
+    }
+
+    private fun verifyAndUpdate(currentUser: ApiResponse) {
+        val (verified, exception) = if (firstName.value.isEmpty() || lastName.value.isEmpty()) {
+            Pair(false, EmptyFieldException())
+        } else {
+            if (currentUser.user?.name?.split(" ")?.first() == firstName.value &&
+                currentUser.user.name.split(" ").last() == lastName.value
+            ) {
+                Pair(false, NothingToUpdateException())
+            } else {
+                Pair(true, null)
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            if (verified) {
+                try {
+                    val response = repository.updateUser(
+                        userUpdate = UserUpdate(
+                            firstName = firstName.value,
+                            lastName = lastName.value
+                        )
+                    )
+                    _apiResponse.value = RequestState.Success(response)
+                    _messageBarState.value = MessageBarState(
+                        message = response.message,
+                        error = response.error
+                    )
+                } catch (e: Exception) {
+                    _apiResponse.value = RequestState.Error(e)
+                    _messageBarState.value = MessageBarState(error = e)
+                }
+            } else {
+                _apiResponse.value = RequestState.Success(
+                    ApiResponse(success = false, error = exception)
+                )
+                _messageBarState.value = MessageBarState(error = exception)
+            }
+        }
+    }
 
     fun updateFirstName(newName: String) {
         if (newName.length < MAX_LENGTH) {
@@ -81,3 +133,11 @@ class ProfileViewModel @Inject constructor(
     }
 
 }
+
+class EmptyFieldException(
+    override val message: String = "Empty Input Field."
+) : Exception()
+
+class NothingToUpdateException(
+    override val message: String = "Nothing to Update."
+) : Exception()
