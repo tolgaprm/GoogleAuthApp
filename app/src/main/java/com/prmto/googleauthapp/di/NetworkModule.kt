@@ -1,6 +1,7 @@
 package com.prmto.googleauthapp.di
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.prmto.googleauthapp.data.remote.KtorApi
 import com.prmto.googleauthapp.util.Constants.BASE_URL
 import dagger.Module
 import dagger.Provides
@@ -47,5 +48,11 @@ object NetworkModule {
             .client(okHttpClient)
             .addConverterFactory(Json.asConverterFactory(contentType))
             .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideKtorApi(retrofit: Retrofit): KtorApi {
+        return retrofit.create(KtorApi::class.java)
     }
 }
