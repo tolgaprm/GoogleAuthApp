@@ -1,15 +1,19 @@
 package com.prmto.googleauthapp.presentation.screen.login
 
 import android.app.Activity
-import android.util.Log
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.prmto.googleauthapp.domain.model.ApiRequest
+import com.prmto.googleauthapp.domain.model.ApiResponse
+import com.prmto.googleauthapp.navigation.Screen
 import com.prmto.googleauthapp.presentation.screen.common.StartActivityForResult
 import com.prmto.googleauthapp.presentation.screen.common.signIn
+import com.prmto.googleauthapp.util.RequestState
 
 @Composable
 fun LoginScreen(
@@ -19,6 +23,7 @@ fun LoginScreen(
 
     val signedInState by loginViewModel.signedInState
     val messageBarState by loginViewModel.messageBarState
+    val apiResponse by loginViewModel.apiResponse
 
     Scaffold(
         topBar = { LoginTopBar() },
@@ -37,7 +42,9 @@ fun LoginScreen(
     StartActivityForResult(
         key = signedInState,
         onResultReceived = { tokenId ->
-            Log.d("LoginScreen", tokenId)
+            loginViewModel.verifyTokenOnBackend(
+                request = ApiRequest(tokenId = tokenId)
+            )
         },
         onDialogDismissed = {
             loginViewModel.saveSignedInState(signedIn = false)
@@ -57,4 +64,28 @@ fun LoginScreen(
         }
     }
 
+    LaunchedEffect(key1 = apiResponse) {
+        when (apiResponse) {
+            is RequestState.Success -> {
+                val response = (apiResponse as RequestState.Success<ApiResponse>).data.success
+                if (response) {
+                    navigateToProfileScreen(navController)
+                } else {
+                    loginViewModel.saveSignedInState(signedIn = false)
+                }
+            }
+            else -> {}
+        }
+    }
+
+}
+
+private fun navigateToProfileScreen(
+    navController: NavHostController
+) {
+    navController.navigate(Screen.Profile.route) {
+        popUpTo(route = Screen.Login.route) {
+            inclusive = true
+        }
+    }
 }

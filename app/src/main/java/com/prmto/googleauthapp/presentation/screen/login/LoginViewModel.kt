@@ -4,8 +4,11 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.prmto.googleauthapp.domain.model.ApiRequest
+import com.prmto.googleauthapp.domain.model.ApiResponse
 import com.prmto.googleauthapp.domain.model.MessageBarState
 import com.prmto.googleauthapp.domain.repository.Repository
+import com.prmto.googleauthapp.util.RequestState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,6 +24,9 @@ class LoginViewModel @Inject constructor(
     private val _messageBarState = mutableStateOf<MessageBarState>(MessageBarState())
     val messageBarState: State<MessageBarState> get() = _messageBarState
 
+    private val _apiResponse = mutableStateOf<RequestState<ApiResponse>>(RequestState.Idle)
+    val apiResponse: State<RequestState<ApiResponse>> get() = _apiResponse
+
     init {
         viewModelScope.launch {
             repository.readSignedInState().collect { completed ->
@@ -35,11 +41,28 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun updateMessageBarState(){
+    fun updateMessageBarState() {
         _messageBarState.value = MessageBarState(error = GoogleAccountNotFoundException())
+    }
+
+    fun verifyTokenOnBackend(request: ApiRequest) {
+        _apiResponse.value = RequestState.Loading
+        try {
+            viewModelScope.launch(Dispatchers.IO) {
+                val response = repository.verifyTokenOnBackend(request = request)
+                _apiResponse.value = RequestState.Success(response)
+                _messageBarState.value = MessageBarState(
+                    message = response.message,
+                    error = response.error
+                )
+            }
+        } catch (e: Exception) {
+            _apiResponse.value = RequestState.Error(e)
+            _messageBarState.value = MessageBarState(error = e)
+        }
     }
 }
 
 class GoogleAccountNotFoundException(
-    override val message: String?="Google Account Not Found."
-):Exception()
+    override val message: String? = "Google Account Not Found."
+) : Exception()
