@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.prmto.googleauthapp.R
+import com.prmto.googleauthapp.components.DisplayAlertDialog
 import com.prmto.googleauthapp.ui.theme.topAppBarBackgroundColor
 import com.prmto.googleauthapp.ui.theme.topAppBarContentColor
 
@@ -34,8 +35,17 @@ fun ProfileTopBarActions(
     onSave: () -> Unit,
     onDeleteAllConfirmed: () -> Unit
 ) {
+
+    var openDialog by remember { mutableStateOf(false) }
+
+    DisplayAlertDialog(
+        openDialog = openDialog,
+        onYesClick = { onDeleteAllConfirmed() },
+        onDialogClosed = { openDialog = false }
+    )
+
     SaveAction(onSave = onSave)
-    DeleteAllAction(onDeleteAllConfirmed = onDeleteAllConfirmed)
+    DeleteAllAction(onDeleteAllConfirmed = { openDialog = true })
 }
 
 @Composable
