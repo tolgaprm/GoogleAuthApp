@@ -2,34 +2,42 @@ package com.prmto.googleauthapp.presentation.screen.profile
 
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.annotation.ExperimentalCoilApi
-import com.prmto.googleauthapp.domain.model.ApiResponse
-import com.prmto.googleauthapp.domain.model.MessageBarState
-import com.prmto.googleauthapp.util.RequestState
 
 @ExperimentalCoilApi
 @Composable
 fun ProfileScreen(
-    navController: NavHostController
+    navController: NavHostController,
+    profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
+
+    val apiResponse by profileViewModel.apiResponse
+    val messageBarState by profileViewModel.messageBarState
+
+    val user by profileViewModel.user
+    val firstName by profileViewModel.firstName
+    val lastName by profileViewModel.lastName
+
     Scaffold(
         topBar = {
             ProfileTopBar(
-                onSave = {  },
+                onSave = { },
                 onDeleteAllConfirmed = {}
             )
         },
         content = {
             ProfileContent(
-                apiResponse = RequestState.Success(ApiResponse(success = true)),
-                messageBarState = MessageBarState(),
-                firstName = "",
-                onFirstNameChanged = {},
-                lastName = "",
-                onLastNameChanged = {},
-                emailAddress = "",
-                profilePhoto = "",
+                apiResponse = apiResponse,
+                messageBarState = messageBarState,
+                firstName = firstName,
+                onFirstNameChanged = profileViewModel::updateFirstName,
+                lastName = lastName,
+                onLastNameChanged = profileViewModel::updateLastName,
+                emailAddress = user?.emailAddress,
+                profilePhoto = user?.profilePhoto,
                 onSignOutClicked = {}
             )
         }

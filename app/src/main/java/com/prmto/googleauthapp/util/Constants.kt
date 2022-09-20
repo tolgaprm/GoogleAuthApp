@@ -1,6 +1,8 @@
 package com.prmto.googleauthapp.util
 
 object Constants {
+    const val MAX_LENGTH =20
+
     const val BASE_URL = "http://10.0.2.2:8080"
 
     const val PREFERENCES_NAME = "app_preferences"
