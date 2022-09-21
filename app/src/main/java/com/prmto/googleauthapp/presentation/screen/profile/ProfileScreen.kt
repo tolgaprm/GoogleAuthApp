@@ -10,9 +10,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.annotation.ExperimentalCoilApi
 import com.google.android.gms.auth.api.identity.Identity
+import com.prmto.googleauthapp.domain.model.ApiRequest
 import com.prmto.googleauthapp.domain.model.ApiResponse
 import com.prmto.googleauthapp.navigation.Screen
+import com.prmto.googleauthapp.presentation.screen.common.StartActivityForResult
+import com.prmto.googleauthapp.presentation.screen.common.signIn
 import com.prmto.googleauthapp.util.RequestState
+import retrofit2.HttpException
 
 @ExperimentalCoilApi
 @Composable
@@ -35,7 +39,7 @@ fun ProfileScreen(
         topBar = {
             ProfileTopBar(
                 onSave = profileViewModel::updateUserInfo,
-                onDeleteAllConfirmed = {}
+                onDeleteAllConfirmed = profileViewModel::deleteUser
             )
         },
         content = {
@@ -52,6 +56,36 @@ fun ProfileScreen(
             )
         }
     )
+
+    StartActivityForResult(
+        key = apiResponse,
+        onResultReceived = { tokenId ->
+            profileViewModel.verifyTokenOnBackend(request = ApiRequest(tokenId = tokenId))
+        },
+        onDialogDismissed = {
+            profileViewModel.saveSignedInState(signedIn = false)
+            navigateToLoginScreen(navController = navController)
+        }
+    ) { activityLauncher ->
+        if (apiResponse is RequestState.Success) {
+            val response = (apiResponse as RequestState.Success<ApiResponse>).data
+            if (response.error is HttpException && response.error.code() == 401) {
+                signIn(
+                    activity = activity,
+                    accountNotFound = {
+                        profileViewModel.saveSignedInState(signedIn = false)
+                        navigateToLoginScreen(navController = navController)
+                    },
+                    launchActivityResult = {
+                        activityLauncher.launch(it)
+                    }
+                )
+            }
+        } else if (apiResponse is RequestState.Error) {
+            profileViewModel.saveSignedInState(signedIn = false)
+            navigateToLoginScreen(navController = navController)
+        }
+    }
 
 
 

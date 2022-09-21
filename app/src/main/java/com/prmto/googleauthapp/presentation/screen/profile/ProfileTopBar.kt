@@ -40,7 +40,7 @@ fun ProfileTopBarActions(
 
     DisplayAlertDialog(
         openDialog = openDialog,
-        onYesClick = { onDeleteAllConfirmed() },
+        onYesClick =onDeleteAllConfirmed,
         onDialogClosed = { openDialog = false }
     )
 

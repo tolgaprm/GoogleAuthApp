@@ -5,10 +5,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.prmto.googleauthapp.domain.model.ApiResponse
-import com.prmto.googleauthapp.domain.model.MessageBarState
-import com.prmto.googleauthapp.domain.model.User
-import com.prmto.googleauthapp.domain.model.UserUpdate
+import com.prmto.googleauthapp.domain.model.*
 import com.prmto.googleauthapp.domain.repository.Repository
 import com.prmto.googleauthapp.util.Constants.MAX_LENGTH
 import com.prmto.googleauthapp.util.RequestState
@@ -146,6 +143,42 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun deleteUser() {
+        _clearSessionResponse.value = RequestState.Loading
+        _apiResponse.value = RequestState.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val response = repository.deleteUser()
+                _clearSessionResponse.value = RequestState.Success(response)
+                _apiResponse.value = RequestState.Success(response)
+                _messageBarState.value = MessageBarState(
+                    message = response.message,
+                    error = response.error
+                )
+            } catch (e: Exception) {
+                _clearSessionResponse.value = RequestState.Error(e)
+                _apiResponse.value = RequestState.Error(e)
+                _messageBarState.value = MessageBarState(error = e)
+            }
+        }
+    }
+
+    fun verifyTokenOnBackend(request: ApiRequest) {
+        _apiResponse.value = RequestState.Loading
+        try {
+            viewModelScope.launch(Dispatchers.IO) {
+                val response = repository.verifyTokenOnBackend(request = request)
+                _apiResponse.value = RequestState.Success(response)
+                _messageBarState.value = MessageBarState(
+                    message = response.message,
+                    error = response.error
+                )
+            }
+        } catch (e: Exception) {
+            _apiResponse.value = RequestState.Error(e)
+            _messageBarState.value = MessageBarState(error = e)
+        }
+    }
 
     fun saveSignedInState(signedIn: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
